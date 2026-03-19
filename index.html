@@ -27,7 +27,7 @@
 </style>
 </head>
 <body>
-<div id="info">スペースキーで上昇！月へ向かおう🌕</div>
+<div id="info">← → で移動 / スペースで上昇！🌕</div>
 <canvas id="gameCanvas" width="400" height="600"></canvas>
 
 <script>
@@ -40,13 +40,16 @@ let bear = {
   y: 500,
   width: 40,
   height: 40,
-  dy: 0
+  dy: 0,
+  dx: 0
 };
 
 let obstacles = [];
 let frame = 0;
 let score = 0;
 let gameOver = false;
+
+let keys = {};
 
 function drawBear() {
   ctx.fillStyle = "#8B4513";
@@ -65,26 +68,37 @@ function drawMoon() {
 }
 
 function updateBear() {
+  // 左右移動
+  if (keys["ArrowLeft"]) bear.x -= 5;
+  if (keys["ArrowRight"]) bear.x += 5;
+
+  // 画面端制限
+  if (bear.x < 0) bear.x = 0;
+  if (bear.x + bear.width > canvas.width) bear.x = canvas.width - bear.width;
+
+  // 上下（ジャンプ）
   bear.dy += gravity;
   bear.y += bear.dy;
 
-  // 画面外でゲームオーバー
   if (bear.y > canvas.height) gameOver = true;
   if (bear.y < 0) bear.y = 0;
 }
 
 function spawnObstacle() {
+  const fromLeft = Math.random() < 0.5;
+
   obstacles.push({
-    x: Math.random() * (canvas.width - 30),
-    y: -40,
+    x: fromLeft ? -30 : canvas.width,
+    y: Math.random() * (canvas.height - 100),
     width: 30,
-    height: 30
+    height: 30,
+    dx: fromLeft ? 4 : -4
   });
 }
 
 function updateObstacles() {
   for (let o of obstacles) {
-    o.y += 4; // 下に流れる
+    o.x += o.dx;
 
     if (
       bear.x < o.x + o.width &&
@@ -96,7 +110,7 @@ function updateObstacles() {
     }
   }
 
-  obstacles = obstacles.filter(o => o.y < canvas.height + 50);
+  obstacles = obstacles.filter(o => o.x > -50 && o.x < canvas.width + 50);
 }
 
 function drawObstacles() {
@@ -138,9 +152,12 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
+// キー操作
 window.addEventListener("keydown", (e) => {
+  keys[e.code] = true;
+
   if (e.code === "Space" && !gameOver) {
-    bear.dy = -8; // 上に飛ぶ
+    bear.dy = -8;
   }
 
   if (e.code === "Space" && gameOver) {
@@ -148,6 +165,11 @@ window.addEventListener("keydown", (e) => {
   }
 });
 
+window.addEventListener("keyup", (e) => {
+  keys[e.code] = false;
+});
+
+// スタート
 gameLoop();
 </script>
 </body>
